@@ -1,20 +1,20 @@
 const app = require('./index');
 const server = app.listen();
-
-const request = require('supertest').agent(server);
+const request = require('supertest');
 
 describe('Hello world', () => {
-    afterAll(() => {
-        server.close();
+    afterAll((done) => {
+        server.close(done);
     });
 
     test('should say hello world', async () => {
-        const res = await request.get('/');
+        const res = await request(server).get('/');
         expect(res.statusCode).toBe(200);
     });
 
     test('parse json correctly', async () => {
-        const res = await request.post('/api/bet/drawId/token').send({ foo: 'barz' });
+        const res = await request(server).post('/api/bet/drawId/token').type('json').send({ foo: 'barz' });
+        console.log(res.text);
         expect(res.statusCode).toBe(200);
     });
 

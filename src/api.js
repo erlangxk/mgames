@@ -7,8 +7,8 @@ router.post('/bet/:draw/:token', async (ctx, next) => {
     const token = ctx.params.token;
     //varify the token, and get the user info
     //verify the draw
-    const json = await parse.json(this);
-    ctx.body = `calling /api/bet ${draw}, ${token}, ${json}`;
+    const json = await parse.json(ctx);
+    ctx.body = `calling /api/bet ${draw}, ${token}, ${JSON.stringify(json)}`;
 });
 
 
