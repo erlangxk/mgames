@@ -1,8 +1,26 @@
-var Router = require('koa-router');
-var router = new Router();
+const Router = require('koa-router');
+const router = new Router({ prefix: "/api" });
+const parse = require('co-body');
 
-router.get('/', async (ctx, next) => {
-    ctx.body = 'Hello World';
-})
+router.post('/bet/:draw/:token', async (ctx, next) => {
+    const draw = ctx.params.draw;
+    const token = ctx.params.token;
+    //varify the token, and get the user info
+    //verify the draw
+    const json = await parse.json(this);
+    ctx.body = `calling /api/bet ${draw}, ${token}, ${json}`;
+});
+
+
+function validateToken(token){
+    return "user1";
+}
+
+function validateDraw(drawId){
+    return {
+        drawId:1,
+        game:"horseracing"
+    };
+}
 
 module.exports = router;

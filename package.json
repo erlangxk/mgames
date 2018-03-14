@@ -7,6 +7,7 @@
   "author": "erlangxk <simon.xikun@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "co-body": "^5.1.1",
     "koa": "^2.5.0",
     "koa-router": "^7.4.0",
     "socket.io": "^2.0.4"

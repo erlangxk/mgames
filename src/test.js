@@ -8,11 +8,14 @@ describe('Hello world', () => {
         server.close();
     });
 
-    test('should say hello world', (done) => {
-        request.get('/').then((response) => {
-            expect(response.statusCode).toBe(200);
-            done();
-        }
-        );
+    test('should say hello world', async () => {
+        const res = await request.get('/');
+        expect(res.statusCode).toBe(200);
     });
+
+    test('parse json correctly', async () => {
+        const res = await request.post('/api/bet/drawId/token').send({ foo: 'barz' });
+        expect(res.statusCode).toBe(200);
+    });
+
 });

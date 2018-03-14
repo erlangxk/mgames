@@ -14,8 +14,15 @@ app.use(async (ctx, next) => {
 
 app.use(api.routes());
 
+app.use(async (ctx, next) => {
+    ctx.body = 'Hello World';
+});
+
 if (!module.parent) {
     app.listen(PORT, () => {
         console.log(`listening to port:${PORT}`);
+    });
+    app.listen(3333, () => {
+        console.log(`listening to port:3333`);
     });
 }
