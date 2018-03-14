@@ -1,0 +1,21 @@
+{
+  "name": "mgames",
+  "version": "1.0.0",
+  "description": "mini games",
+  "main": "index.js",
+  "repository": "https://github.com/erlangxk/mgames.git",
+  "author": "erlangxk <simon.xikun@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "koa": "^2.5.0",
+    "socket.io": "^2.0.4"
+  },
+  "devDependencies": {
+    "jest": "^22.4.2",
+    "supertest": "^3.0.0",
+    "typescript": "^2.7.2"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}
