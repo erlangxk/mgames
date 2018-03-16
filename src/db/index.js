@@ -19,18 +19,28 @@ const INSERT_PAYOUTS = 'insert into payouts(user_id, draw_id, payout_amount, jso
 //const INSERT DRAW_PAY_TABLE (draw_id, json,create_time)
 //const INSERT DRAW_RESULT(draw_id, create_time, result)
 
-const {Pool, Client} = require('pg');
-const CONNECTION_STRING ='postgres://postgres:111111@localhost/postgres';
+const { Pool } = require('pg');
+const CONNECTION_STRING = 'postgres://postgres:111111@localhost/postgres';
 
-const pool = new Pool({
-    connectionString:CONNECTION_STRING,
-    connectionTimeoutMillis:3000,
-});
+async function checkedPool(connStr) {
+    const pool = new Pool({
+        connectionString: connStr,
+        connectionTimeoutMillis: 3000,
+    });
+    await pool.query("select 1 as result");
+    return {
+        pool,
+        close: (callback) => {
+            pool.end(callback);
+        },
+    };
+}
 
-async function firstQuery(){
-    const res=await pool.query('select * from bets');
+async function firstQuery() {
+    const { pool, close } = await checkedPool(CONNECTION_STRING);
+    const res = await pool.query('select * from bets');
     console.log(res.rows[0].bets_json);
-    await pool.end();
+    close();
 }
 
 firstQuery();
