@@ -27,12 +27,7 @@ async function checkedPool(connStr) {
         connectionTimeoutMillis: 3000,
     });
     await pool.query("select 1 as result");
-    return {
-        pool,
-        close: (callback) => {
-            pool.end(callback);
-        },
-    };
+    return pool;
 }
 
 module.exports = checkedPool;

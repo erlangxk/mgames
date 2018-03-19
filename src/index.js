@@ -20,17 +20,21 @@ app.use(async (ctx, next) => {
 });
 
 if (!module.parent) {
-    pg(CONNECTION_STRING).then( db => {
-        app.context.dbpool = db.pool;
+    const bootstrap = pg(CONNECTION_STRING).then(db => {
+        app.context.dbpool = db;
         const server = http.createServer(app.callback());
-        server.on('close',()=>{
-            db.close(()=>{
+        server.on('close', () => {
+            db.end(() => {
                 console.log("database pool is closing.");
             });
             console.log("http server is closing.");
         });
-        server.listen(PORT, () => {
+        return server.listen(PORT, () => {
             console.log(`listening to port:${PORT}`);
         });
+    });
+
+    bootstrap.catch(error => {
+        console.error(error);
     });
 }
