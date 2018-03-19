@@ -2,12 +2,13 @@ const http = require('http');
 const Koa = require('koa');
 const app = module.exports = new Koa();
 const api = require('./api');
-const pg = require('./db');
+const { checkedDbPool } = require('./db');
 const CONNECTION_STRING = 'postgres://postgres:111111@localhost/postgres';
 const PORT = 3000;
 
 app.use(async (ctx, next) => {
     const start = Date.now();
+    ctx.state.requestTime = start;
     await next();
     const delta = Math.ceil(Date.now() - start);
     ctx.set('X-Response-Time', `${delta} ms`);
@@ -19,8 +20,8 @@ app.use(async (ctx, next) => {
     ctx.body = 'Hello World';
 });
 
-if (!module.parent) {
-    const bootstrap = pg(CONNECTION_STRING).then(db => {
+if (require.main === module) {
+    const bootstrap = checkedDbPool(CONNECTION_STRING).then(db => {
         app.context.dbpool = db;
         const server = http.createServer(app.callback());
         server.on('close', () => {

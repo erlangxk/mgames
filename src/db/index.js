@@ -1,4 +1,10 @@
-const INSERT_BETS = 'insert into bets (user_id, draw_id, bet_amount, json, bet_time, create_time) values (?,?,?,?)';
+
+
+const INSERT_BETS = 'INSERT INTO bets (user_id, draw_id, amount, bets_json, bet_time, create_time) VALUES ($1,$2,$3,$4,$5,$6) RETURNING bet_id';
+async function insertBets(pool, userId, drawId, betAmount, json, betTime) {
+    const result = await pool.query(INSERT_BETS, [userId, drawId, betAmount, json, betTime, Date.now()]);
+    return result.rows[0].bet_id;
+}
 /*JSON{
     12: 4,
     34: 6,
@@ -21,7 +27,7 @@ const INSERT_PAYOUTS = 'insert into payouts(user_id, draw_id, payout_amount, jso
 
 const { Pool } = require('pg');
 
-async function checkedPool(connStr) {
+async function checkedDbPool(connStr) {
     const pool = new Pool({
         connectionString: connStr,
         connectionTimeoutMillis: 3000,
@@ -30,6 +36,20 @@ async function checkedPool(connStr) {
     return pool;
 }
 
-module.exports = checkedPool;
+module.exports = {
+    checkedDbPool,
+    insertBets
+}
+
+async function test() {
+    const CONNECTION_STRING = 'postgres://postgres:111111@localhost/postgres';
+    const pool = await checkedDbPool(CONNECTION_STRING);
+    const betId = await insertBets(pool, 1, 1, 344, { a: 3, b: 4 }, 4);
+    console.log(betId);
+    pool.end(() => { console.log("close db pool") });
+}
+
+//test();
 
 //TODO when pool emit error
+
