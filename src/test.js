@@ -2,7 +2,7 @@ const app = require('./index');
 const server = app.listen();
 const request = require('supertest');
 
-describe('Hello world', () => {
+describe.skip('Hello world', () => {
     afterAll((done) => {
         server.close(done);
     });
