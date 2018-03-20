@@ -27,13 +27,13 @@ function publish(client, gameId, data) {
 }
 
 function test() {
-    client.unref();
     client.ping((err, reply) => {
         if (err) {
             console.error(err);
         } else {
             console.log(reply);
         }
+        client.quit();
     });
 }
 
