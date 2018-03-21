@@ -104,11 +104,15 @@ function randomResult() {
 }
 
 function checkBets(bets) {
+    let total = 0;
     for (const [k, v] of Object.entries(bets)) {
-        if (ALLOWED_BET_TYPES.has(k) && Number.isInteger(v) && v > 0 && v <= MAX_BET) continue;
-        return false;
+        if (ALLOWED_BET_TYPES.has(k) && Number.isInteger(v) && v > 0 && v <= MAX_BET) {
+            total += v;
+            continue;
+        }
+        return undefined;
     }
-    return true;
+    return total;
 }
 
 module.exports = {

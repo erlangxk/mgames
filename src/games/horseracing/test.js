@@ -7,7 +7,7 @@ describe('check bets', () => {
             "12": 3,
             "34": 5,
         };
-        expect(checkBets(bets)).toBe(true);
+        expect(checkBets(bets)).toBe(8);
     });
 
     test('should not pass, bet is bigger than 80 ', () => {
@@ -15,7 +15,7 @@ describe('check bets', () => {
             "12": 3,
             "34": 81,
         };
-        expect(checkBets(bets)).toBe(false);
+        expect(checkBets(bets)).toBe(undefined);
     });
 
     test('should not pass, key is not right', () => {
@@ -23,7 +23,7 @@ describe('check bets', () => {
             "1": 3,
             "34": 5,
         };
-        expect(checkBets(bets)).toBe(false);
+        expect(checkBets(bets)).toBe(undefined);
     });
 
     test('should not pass, value is not right', () => {
@@ -31,12 +31,12 @@ describe('check bets', () => {
             "12": 3.1,
             "34": 5,
         };
-        expect(checkBets(bets)).toBe(false);
+        expect(checkBets(bets)).toBe(undefined);
         bets = {
             "12": "3",
             "34": 5,
         };
-        expect(checkBets(bets)).toBe(false);
+        expect(checkBets(bets)).toBe(undefined);
     });
 
     test('get bet type by odds', () => {
