@@ -5,7 +5,25 @@ const parse = require('co-body');
 const { insertBets, loadDraw } = require('./db');
 const { validateBets } = require('/games');
 
-router.post('/bet/:draw/:token', async (ctx, next) => {
+/*
+    OPERATOR_NAME+
+    GAME_NAME+
+    GAME_ID = unique identity as one docker instance
+    AUTH_URL
+    DATABASE_URL
+    REDIS_URL
+*/
+
+router.post('/auth/:token', async (ctx, next) => {
+    //1. send the request to the auth_url
+    //2. parse the response, return error if any, otherwise continue to the next
+    //2. save the information in the database(for ban/tracing) if not exist
+    //3. jwt sign the information
+    //4. return jwtoken back to client
+});
+
+router.post('/bet/:draw', async (ctx, next) => {
+    // get the token information from header, Authentication: Bear xxxxx
     //varify the token, and get the user info
     //verify the draw
     try {
