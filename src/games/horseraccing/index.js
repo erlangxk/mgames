@@ -1,9 +1,6 @@
 const ALLOWED_BET_TYPES = new Set(["12", "13", "14", "15", "16", "23", "24", "25", "26", "34", "35", "36", "45", "46", "56"]);
 const PAYOUTS = [3, 4, 5, 8, 10, 20, 30, 60, 80, 100, 125, 175, 250, 500, 1000];
-
-function allowedBetTypes() {
-    return ALLOWED_BET_TYPES;
-}
+const MAX_BET = 80;
 
 function shuffle(array) {
     const arr2 = array.slice();
@@ -25,9 +22,16 @@ function zip(payouts, betTypes) {
     return Object.freeze(result);
 }
 
-function randomPayout() {
+function randomPaytable() {
     const shufffled_payouts = shuffle(PAYOUTS);
     return zip(shufffled_payouts, ALLOWED_BET_TYPES);
+}
+
+function winBetType(paytable, odds) {
+    for (const [k, v] of Object.entries(paytable)) {
+        if (v === odds) return k;
+    }
+    return undefined;
 }
 
 function getRandomInt(max) {
@@ -99,24 +103,26 @@ function randomResult() {
     }
 }
 
-
 function checkBets(bets) {
     for (const [k, v] of Object.entries(bets)) {
-        if (ALLOWED_BET_TYPES.has(k) && Number.isInteger(v) && v > 0) continue;
+        if (ALLOWED_BET_TYPES.has(k) && Number.isInteger(v) && v > 0 && v <= MAX_BET) continue;
         return false;
     }
     return true;
 }
 
 module.exports = {
-    checkBets
+    checkBets,
+    winBetType,
+    randomResult,
+    randomPaytable
 }
 
 function testRandonPayout() {
-    const i = 10000000;
+    const i = 1000000;
     const m = new Map();
     for (let n = 0; n < i; n++) {
-        let rp = randomPayout();
+        let rp = randomPaytable();
         for (const [k, v] of Object.entries(rp)) {
             const m2 = m.get(k);
             if (m2 === undefined) {
@@ -137,23 +143,17 @@ function testRandonPayout() {
 }
 
 function testRandomResult() {
-    const m = new Map();
+    let total = 0;
     const i = 100000000;
     for (let n = 0; n < i; n++) {
-        let x = randomResult();
-        const y = m.get(x);
-        if (y === undefined) {
-            m.set(x, 1)
-        } else {
-            m.set(x, y + 1);
-        }
+        total += randomResult();
     }
-    console.log(m);
-    let total = 0;
-    for (const [k, v] of m) {
-        total += v * k;
-    }
-    console.log(total);
+    const cost = 15 * i;
+    const rtp = 42000 / 48365;
+    console.log(`total/cost=${total / cost}`);
+    console.log(`rtp=${rtp}`);
 }
 
-testRandomResult();
+if (require.main === module) {
+    testRandomResult();
+}
