@@ -1,10 +1,28 @@
 
 
-const INSERT_BETS = 'INSERT INTO bets (user_id, draw_id, amount, bets_json, bet_time, create_time) VALUES ($1,$2,$3,$4,$5,$6) RETURNING bet_id';
+const SQL_INSERT_BETS = 'INSERT INTO bets (user_id, draw_id, amount, bets_json, bet_time, create_time) VALUES ($1,$2,$3,$4,$5,$6) RETURNING bet_id';
 async function insertBets(pool, userId, drawId, betAmount, json, betTime) {
-    const result = await pool.query(INSERT_BETS, [userId, drawId, betAmount, json, betTime, Date.now()]);
+    const result = await pool.query(SQL_INSERT_BETS, [userId, drawId, betAmount, json, betTime, Date.now()]);
     return result.rows[0].bet_id;
 }
+
+//draw_view
+const SQL_LOAD_DRAW = 'SELECT game_name FROM draw AS d, game AS g WHERE  g.game_id = d.game_id AND draw_id = $1 AND draw_end_time>$2 AND draw_start_time<=$2';
+async function loadDraw(pool, drawId, betTime) {
+    const result = await pool.query(SQL_LOAD_DRAW, [drawId, betTime]);
+    if (result.rows.length === 0) {
+        return undefined;
+    }
+    return result.rows[0].game_name;
+}
+
+const SQL_INSERT_DRAW = 'INSERT INTO draw (game_id,draw_start_time,draw_end_time,extra_data,create_time) VALUES ($1,$2,$3,$4,$5) RETURNING draw_id';
+async function insertDraw(pool, gameId, drawStartTime, drawEndTime, extraData) {
+    const result = await pool.query(SQL_INSERT_DRAW, [gameId, drawStartTime, drawEndTime, extraData, Date.now()]);
+    return result.rows[0].draw_id;
+}
+
+
 /*JSON{
     12: 4,
     34: 6,
@@ -44,12 +62,30 @@ module.exports = {
 async function test() {
     const CONNECTION_STRING = 'postgres://postgres:111111@localhost/postgres';
     const pool = await checkedDbPool(CONNECTION_STRING);
-    const betId = await insertBets(pool, 1, 1, 344, { a: 3, b: 4 }, 4);
-    console.log(betId);
+    const result = await insertDraw(pool, 1, 12, 34, {
+        '12': 5,
+        '13': 125,
+        '14': 20,
+        '15': 80,
+        '16': 10,
+        '23': 3,
+        '24': 30,
+        '25': 8,
+        '26': 100,
+        '34': 1000,
+        '35': 4,
+        '36': 175,
+        '45': 250,
+        '46': 60,
+        '56': 500
+    });
+    console.log(result);
     pool.end(() => { console.log("close db pool") });
 }
 
-//test();
+if (require.main === module) {
+    test();
+}
 
 //TODO when pool emit error
 
