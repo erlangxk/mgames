@@ -24,7 +24,6 @@ describe('check bets', () => {
             "34": 5,
         };
         expect(checkBets(bets)).toBe(false);
-
     });
 
     test('should not pass, value is not right', () => {
