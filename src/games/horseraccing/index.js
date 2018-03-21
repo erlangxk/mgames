@@ -6,23 +6,28 @@ function allowedBetTypes() {
 }
 
 function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
+    const arr2 = array.slice();
+    for (let i = arr2.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        const x = array[i];
-        array[i] = array[j];
-        array[j] = x;
+        const x = arr2[i];
+        arr2[i] = arr2[j];
+        arr2[j] = x;
     }
+    return arr2;
 }
 
-function randomPayout() {
-    let payouts = PAYOUTS.slice();
-    shuffle(payouts);
-    let result = {};
+function zip(payouts, betTypes) {
+    const result = {};
     let i = 0;
-    for (const b of ALLOWED_BET_TYPES) {
+    for (const b of betTypes) {
         result[b] = payouts[i++];
     }
     return Object.freeze(result);
+}
+
+function randomPayout() {
+    const shufffled_payouts = shuffle(PAYOUTS);
+    return zip(shufffled_payouts, ALLOWED_BET_TYPES);
 }
 
 function getRandomInt(max) {
@@ -108,7 +113,7 @@ module.exports = {
 }
 
 function testRandonPayout() {
-    const i = 1000000;
+    const i = 10000000;
     const m = new Map();
     for (let n = 0; n < i; n++) {
         let rp = randomPayout();
@@ -133,7 +138,7 @@ function testRandonPayout() {
 
 function testRandomResult() {
     const m = new Map();
-    const i = 1000000;
+    const i = 100000000;
     for (let n = 0; n < i; n++) {
         let x = randomResult();
         const y = m.get(x);
@@ -145,8 +150,8 @@ function testRandomResult() {
     }
     console.log(m);
     let total = 0;
-    for(const [k,v] of m){
-        total+=v*k;
+    for (const [k, v] of m) {
+        total += v * k;
     }
     console.log(total);
 }
