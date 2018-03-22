@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const util = require('util');
 
 const jwtSignAsync = util.promisify(jwt.sign);
+const jwtVerifyAsync = utils.promisify(jwt.verify);
 
 /*
     OPERATOR_NAME+
@@ -19,6 +20,20 @@ const jwtSignAsync = util.promisify(jwt.sign);
     REDIS_URL
 */
 
+const result = {
+    ok: function (result) {
+        return {
+            result
+        }
+    },
+    err: function (error, msg) {
+        return {
+            error,
+            msg
+        }
+    }
+}
+
 function parseAuthResponse(res) {
     return res;
 }
@@ -26,18 +41,24 @@ function parseAuthResponse(res) {
 router.all('/auth/:token', async (ctx, next) => {
     let authUrl = process.env.AUTH_URL;//SHOULD get and verify when server start
     let secret = process.env.JWT_SECRET;
-    if (lodash.isEmpty(authUrl) || lodash.isEmpty(secret)) {
+    let operator = process.env.OPERATOR;
+    if (lodash.isEmpty(authUrl) || lodash.isEmpty(secret) || lodash.isEmpty(operator)) {
         ctx.throw(500);
     }
     let token = ctx.params.token;
     if (!(lodash.isString(token) && token.length > 0)) {
         ctx.throw(400);
     }
-    const res = await request.post(`${authUrl}/${token}`).retry().timeout(3000);
-    console.log(res.body);
-    const user = parseAuthResponse(res.body);
-    const jwtToken = await jwtSignAsync(user, secret, { expiresIn: '24h' });
-    ctx.body = jwtToken;
+    try {
+        const res = await request.post(`${authUrl}/${token}`).retry().timeout(3000);
+        const user = parseAuthResponse(res.body);
+        const dbUser = loadUser(ctx.dbpool, operator, user.name);
+        //look up the user in the database, and save if not exist before, add user id in the result
+        const jwtToken = await jwtSignAsync(dbUser, secret, { expiresIn: '24h' });
+        ctx.body = jwtToken;
+    } catch (err) {
+        ctx.throw(504);
+    }
     //checkOrSaveUser(user)
     //1. send the request to the auth_url
     //2. parse the response, return error if any, otherwise continue to the next
@@ -64,7 +85,20 @@ router.post('/bet/:draw', async (ctx, next) => {
 });
 
 async function validateToken(token) {
-    return 1;
+    let secret = process.env.JWT_SECRET;
+    if (lodash.isEmpty(secret)) {
+        return result.err(500, 'no jwt secret found');
+    }
+    try {
+        const r = await jwtVerifyAsync(token, secret);
+        return result.ok(r);
+    } catch (err) {
+        if (err.name === 'TokenExpiredError') {
+            return result.err(412, 'token is expired');
+        } else {
+            return result.err(400, 'malformed token');
+        }
+    }
 }
 
 async function validateDraw(drawId, betTime, dbpool) {

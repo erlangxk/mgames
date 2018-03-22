@@ -22,6 +22,36 @@ async function insertDraw(pool, gameId, drawStartTime, drawEndTime, extraData) {
     return result.rows[0].draw_id;
 }
 
+const SQL_LOAD_USER = 'SELECT user_id FROM users WHERE operator=$1 AND name=$2';
+const SQL_INSERT_USER = 'INSERT INTO users (operator,user_name,create_time) VALUES ($1,$2,$3) RETURNING user_id';
+
+async function selectUserOrInsert(pool, operator, name) {
+    return transaction(pool, async (client) => {
+        const qr = await client.query(SQL_LOAD_USER, [operator, name]);
+        if (qr.rows.length === 0) {
+            const ir = await client.query(SQL_INSERT_USER, [operator, name, Date.now()]);
+            return ir.rows[0].user_id;
+        } else {
+            return qr.rows[0].user_id;
+        }
+    });
+}
+
+async function transaction(pool, func) {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const result = await func(client);
+        await client.query('COMMIT');
+        return result;
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+    } finally {
+        client.release();
+    }
+}
+
 
 /*JSON{
     12: 4,
