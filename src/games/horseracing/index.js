@@ -1,3 +1,5 @@
+const lodash = require('lodash');
+
 const ALLOWED_BET_TYPES = new Set(["12", "13", "14", "15", "16", "23", "24", "25", "26", "34", "35", "36", "45", "46", "56"]);
 const PAYOUTS = [3, 4, 5, 8, 10, 20, 30, 60, 80, 100, 125, 175, 250, 500, 1000];
 const MAX_BET = 80;
@@ -106,7 +108,7 @@ function randomResult() {
 function checkBets(bets) {
     let total = 0;
     for (const [k, v] of Object.entries(bets)) {
-        if (ALLOWED_BET_TYPES.has(k) && Number.isInteger(v) && v > 0 && v <= MAX_BET) {
+        if (ALLOWED_BET_TYPES.has(k) && lodash.isInteger(v) && v > 0 && v <= MAX_BET) {
             total += v;
             continue;
         }
