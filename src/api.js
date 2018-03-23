@@ -3,7 +3,7 @@
 const Router = require('koa-router');
 const router = new Router({ prefix: "/api" });
 const parse = require('co-body');
-const { insertBets, loadDraw, selectUserOrInsert } = require('./db');
+const { insertBets, loadDraw, selectUserOrInsert, insertWalletBet, updateWalletBet } = require('./db');
 const { validateBets } = require('./games');
 const request = require('superagent');
 const lodash = require('lodash');
@@ -15,6 +15,8 @@ const jwtSignAsync = util.promisify(jwt.sign);
 const jwtVerifyAsync = utils.promisify(jwt.verify);
 
 class InitializationError extends BaseError { };
+class BetResponseParseError extends BaseError { };
+class WalletBetRequestError extends BaseError { };
 /*
     OPERATOR_NAME+
     GAME_NAME+
@@ -85,12 +87,31 @@ router.post('/bet/:draw', async (ctx, next) => {
     }
 });
 
-async function sendRequestToWallet(walletUrl, trxId, amount) {
-    //handle the late response, maybe the result is out.
-
+function parseWalletBetResponse(res) {
+    throw new BetResponseParseError("not well formatted");
 }
 
-
+async function sendRequestToWallet(dbpool, walletUrl, drawId, betId, amount) {
+    try {
+        const gameTrxId = insertWalletBet(dbpool, betId, amount);
+        const res = request.post(walletUrl).query({ trxId: gameTrxId, amount, drawId, betId }).retry().timeout(3000);
+        const result = parseWalletBetResponse(res);
+        await updateWalletBet(dbpool, result.walletTrxId, result.walletCode, 0, result.trxId);
+        return (!!result.ok);
+    } catch (err) {
+        console.error("failed to send request to wallet", err);
+        let error;
+        if (err.timeout) {
+            error = 1;
+        } else if (err instanceof BetResponseParseError) {
+            error = 2;
+        } else {
+            error = 3;
+        }
+        await updateWalletBet(dbpool, undefined, undefined, error, gameTrxId);
+        throw new WalletBetRequestError("failed to send request to wallet");
+    }
+}
 
 async function validateToken(token) {
     let secret = process.env.JWT_SECRET;
