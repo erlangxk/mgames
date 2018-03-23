@@ -1,3 +1,5 @@
+"use strict";
+
 const Router = require('koa-router');
 const router = new Router({ prefix: "/api" });
 const parse = require('co-body');
@@ -7,10 +9,12 @@ const request = require('superagent');
 const lodash = require('lodash');
 const jwt = require('jsonwebtoken');
 const util = require('util');
+const BaseError = require('./exp');
 
 const jwtSignAsync = util.promisify(jwt.sign);
 const jwtVerifyAsync = utils.promisify(jwt.verify);
 
+class InitializationError extends BaseError { };
 /*
     OPERATOR_NAME+
     GAME_NAME+
@@ -71,24 +75,29 @@ router.post('/bet/:draw', async (ctx, next) => {
         const draw = await validateDraw(ctx.params.draw, betTime, ctx.dbpool);
         const bets = await validateBets(draw.game, json);
         const betId = await insertBets(ctx.dbpool, userId, draw.drawId, bets.amount, bets.json, betTime);
+        //insert wallet request into database.
+        //send request to deduct money
+        //update wallet request
+
         ctx.body = `calling /api/bet ${draw}, ${ctx.params.token}, ${JSON.stringify(json)}, ${betId}`;
     } catch (err) {
-        ctx.body = `bad request`;
+        return ctx.throw(400);
     }
 });
+
+async function sendRequestToWallet(walletUrl, trxId, amount) {
+    //handle the late response, maybe the result is out.
+
+}
+
+
 
 async function validateToken(token) {
     let secret = process.env.JWT_SECRET;
     if (lodash.isEmpty(secret)) {
-        return Promise.reject(new Error('no jwt secret found'));
+        return Promise.reject(new InitializationError('no jwt secret found'));
     }
-    return jwtVerifyAsync(token, secret).catch(err => {
-        if (err.name === 'TokenExpiredError') {
-            return Promise.reject(new Error('token is expired'));
-        } else {
-            return Promise.reject(new Error('malformed token'));
-        }
-    });
+    return jwtVerifyAsync(token, secret);
 }
 
 async function validateDraw(drawId, betTime, dbpool) {
