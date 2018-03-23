@@ -1,4 +1,17 @@
-
+async function transaction(pool, func) {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const result = await func(client);
+        await client.query('COMMIT');
+        return result;
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+    } finally {
+        client.release();
+    }
+}
 
 const SQL_INSERT_BETS = 'INSERT INTO bets (user_id, draw_id, amount, bets_json, bet_time, create_time) VALUES ($1,$2,$3,$4,$5,$6) RETURNING bet_id';
 async function insertBets(pool, userId, drawId, betAmount, json, betTime) {
@@ -22,7 +35,7 @@ async function insertDraw(pool, gameId, drawStartTime, drawEndTime, extraData) {
     return result.rows[0].draw_id;
 }
 
-const SQL_LOAD_USER = 'SELECT user_id FROM users WHERE operator=$1 AND name=$2';
+const SQL_LOAD_USER = 'SELECT user_id FROM users WHERE operator=$1 AND user_name=$2';
 const SQL_INSERT_USER = 'INSERT INTO users (operator,user_name,create_time) VALUES ($1,$2,$3) RETURNING user_id';
 
 async function selectUserOrInsert(pool, operator, name) {
@@ -37,20 +50,7 @@ async function selectUserOrInsert(pool, operator, name) {
     });
 }
 
-async function transaction(pool, func) {
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-        const result = await func(client);
-        await client.query('COMMIT');
-        return result;
-    } catch (e) {
-        await client.query('ROLLBACK');
-        throw e;
-    } finally {
-        client.release();
-    }
-}
+
 
 
 /*JSON{
@@ -92,23 +92,7 @@ module.exports = {
 async function test() {
     const CONNECTION_STRING = 'postgres://postgres:111111@localhost/postgres';
     const pool = await checkedDbPool(CONNECTION_STRING);
-    const result = await insertDraw(pool, 1, 12, 34, {
-        '12': 5,
-        '13': 125,
-        '14': 20,
-        '15': 80,
-        '16': 10,
-        '23': 3,
-        '24': 30,
-        '25': 8,
-        '26': 100,
-        '34': 1000,
-        '35': 4,
-        '36': 175,
-        '45': 250,
-        '46': 60,
-        '56': 500
-    });
+    const result = await selectUserOrInsert(pool, 'm88','simon');
     console.log(result);
     pool.end(() => { console.log("close db pool") });
 }
