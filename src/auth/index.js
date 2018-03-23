@@ -8,7 +8,7 @@ const router = new Router({ prefix: "/api" });
 
 router.all('/auth/:token', async (ctx, next) => {
     ctx.body = {
-        user_name: "jobs",
+        username: "jobs",
         test: true,
         currency: "USD",
     }
@@ -25,3 +25,5 @@ if (require.main === module) {
         console.log(`listening to port:${PORT}`);
     });
 }
+
+module.exports = app;
