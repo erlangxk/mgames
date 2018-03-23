@@ -1,3 +1,5 @@
+"use strict";
+
 async function transaction(pool, func) {
     const client = await pool.connect();
     try {
@@ -19,7 +21,6 @@ async function insertBets(pool, userId, drawId, betAmount, json, betTime) {
     return result.rows[0].bet_id;
 }
 
-//draw_view
 const SQL_LOAD_DRAW = 'SELECT game_name FROM draw AS d, game AS g WHERE  g.game_id = d.game_id AND draw_id = $1 AND draw_end_time>$2 AND draw_start_time<=$2';
 async function loadDraw(pool, drawId, betTime) {
     const result = await pool.query(SQL_LOAD_DRAW, [drawId, betTime]);
@@ -50,8 +51,17 @@ async function selectUserOrInsert(pool, operator, name) {
     });
 }
 
+const SQL_INSERT_WALLET_BET = 'INSERT INTO wallet_bet (bet_id, amount, create_time) values ($1,$2,$3) RETURNING game_trx_id';
+async function insertWallet(pool, betId, amount) {
+    const result = await pool.query(SQL_INSERT_WALLET_BET, [betId, amount, Date.now()]);
+    return result.rows[0].game_trx_id;
+}
 
-
+const SQL_UPDATE_WALLET_BET = 'UPDATE wallet_bet SET wallet_trx_id=$1, update_time=$2, wallet_code=$3, error=$4 WHERE game_trx_id=$5';
+async function updateWallet(pool, walletTrxId, walletCode, error, gameTrxId) {
+    const result = await pool.query(SQL_UPDATE_WALLET_BET, [walletTrxId, Date.now(), walletCode, error, gameTrxId]);
+    return result.rowCount;
+}
 
 /*JSON{
     12: 4,
@@ -59,16 +69,12 @@ async function selectUserOrInsert(pool, operator, name) {
 }*/
 //const INSERT_BET_WALLET_REQ
 //const INSERT_BET_WALLET_RES
-
-const INSERT_PAYOUTS = 'insert into payouts(user_id, draw_id, payout_amount, json,payout_time,create_time) values (?,?,?,?)';
-
+//const INSERT_PAYOUTS = 'insert into payouts(user_id, draw_id, payout_amount, json,payout_time,create_time) values (?,?,?,?)';
 /*JSON {
     123456: {12:40, 36:50},
 }*/
-
 //const INSERT_PAYOUT_WALLET_REQ
 //const INSERT_PAYOUT_WALLET_RES
-
 //const INSERT DRAW (draw_id, game_id, start_time, end_time, create_time)
 //const INSERT DRAW_PAY_TABLE (draw_id, json,create_time)
 //const INSERT DRAW_RESULT(draw_id, create_time, result)
@@ -93,7 +99,7 @@ module.exports = {
 async function test() {
     const CONNECTION_STRING = 'postgres://postgres:111111@localhost/postgres';
     const pool = await checkedDbPool(CONNECTION_STRING);
-    const result = await selectUserOrInsert(pool, 'm88','simon');
+    const result = await updateWallet(pool, "xxxxx", "xxx", 0, 1);
     console.log(result);
     pool.end(() => { console.log("close db pool") });
 }
