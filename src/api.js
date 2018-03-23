@@ -1,7 +1,7 @@
 const Router = require('koa-router');
 const router = new Router({ prefix: "/api" });
 const parse = require('co-body');
-const { insertBets, loadDraw } = require('./db');
+const { insertBets, loadDraw, selectUserOrInsert } = require('./db');
 const { validateBets } = require('./games');
 const request = require('superagent');
 const lodash = require('lodash');
@@ -52,19 +52,12 @@ router.all('/auth/:token', async (ctx, next) => {
     try {
         const res = await request.post(`${authUrl}/${token}`).retry().timeout(3000);
         const user = parseAuthResponse(res.body);
-        const dbUser = loadUser(ctx.dbpool, operator, user.name);
-        //look up the user in the database, and save if not exist before, add user id in the result
-        const jwtToken = await jwtSignAsync(dbUser, secret, { expiresIn: '24h' });
-        ctx.body = jwtToken;
+        const userId = selectUserOrInsert(ctx.dbpool, operator, user.name);
+        const jwtToken = await jwtSignAsync({ id: userId, ...user }, secret, { expiresIn: '24h' });
+        ctx.body = result.ok(jwtToken);
     } catch (err) {
         ctx.throw(504);
     }
-    //checkOrSaveUser(user)
-    //1. send the request to the auth_url
-    //2. parse the response, return error if any, otherwise continue to the next
-    //2. save the information in the database(for ban/tracing) if not exist
-    //3. jwt sign the information
-    //4. return jwtoken back to client
 });
 
 router.post('/bet/:draw', async (ctx, next) => {
@@ -87,18 +80,15 @@ router.post('/bet/:draw', async (ctx, next) => {
 async function validateToken(token) {
     let secret = process.env.JWT_SECRET;
     if (lodash.isEmpty(secret)) {
-        return result.err(500, 'no jwt secret found');
+        return Promise.reject(new Error('no jwt secret found'));
     }
-    try {
-        const r = await jwtVerifyAsync(token, secret);
-        return result.ok(r);
-    } catch (err) {
+    return jwtVerifyAsync(token, secret).catch(err => {
         if (err.name === 'TokenExpiredError') {
-            return result.err(412, 'token is expired');
+            return Promise.reject(new Error('token is expired'));
         } else {
-            return result.err(400, 'malformed token');
+            return Promise.reject(new Error('malformed token'));
         }
-    }
+    });
 }
 
 async function validateDraw(drawId, betTime, dbpool) {

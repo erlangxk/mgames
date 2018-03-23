@@ -86,7 +86,8 @@ async function checkedDbPool(connStr) {
 
 module.exports = {
     checkedDbPool,
-    insertBets
+    insertBets,
+    selectUserOrInsert
 }
 
 async function test() {
