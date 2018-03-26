@@ -1,11 +1,9 @@
 const http = require('http');
 const Koa = require('koa');
 const api = require('./api');
-const { checkedDbPool } = require('./db');
-const CONNECTION_STRING = 'postgres://postgres:111111@localhost/postgres';
 const PORT = 3000;
 
-function install(app) {
+function installRoutes(app) {
     app.use(async (ctx, next) => {
         const start = Date.now();
         ctx.state.requestTime = start;
@@ -17,20 +15,17 @@ function install(app) {
     app.use(api.routes());
 
     app.use(async (ctx, next) => {
-        ctx.body = 'Hello World';
+        ctx.body = 'PONG';
     });
 }
 
 async function bootstrap(app) {
-    install(app);
-    // const db = await checkedDbPool(CONNECTION_STRING);
-    // app.context.dbpool = db;
+    const dispose = await installDeps(app.context);
+    installRoutes(app);
     const server = http.createServer(app.callback());
     server.on('close', () => {
         console.log("http server is closing.");
-        db.end(() => {
-            console.log("database pool is closing.");
-        });
+        dispose();
     });
     return server.listen(PORT);
 }

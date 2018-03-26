@@ -1,6 +1,7 @@
 const lodash = require('lodash');
-const { Result } = require('./common');
+const { Result, jwtSignAsync } = require('./common');
 const { selectUserOrInsert } = require('./db');
+const request = require('superagent');
 
 function parseAuthResponse(res) {
     return res;

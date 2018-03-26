@@ -3,6 +3,13 @@ const Result = {
     err: error => ({ error })
 }
 
+const util = require('util');
+const jwt = require('jsonwebtoken');
+const jwtSignAsync = util.promisify(jwt.sign);
+const jwtVerifyAsync = utils.promisify(jwt.verify);
+
 module.exports = {
-    Result
+    Result,
+    jwtSignAsync,
+    jwtVerifyAsync,
 };

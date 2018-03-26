@@ -1,8 +1,8 @@
-const { checkBets } = require('./games/horseracing');
+const { checkBets: horseracingCheckBets } = require('../games/horseracing');
 
 const games = {
     "horseracing": {
-        checkBets: checkBets,
+        checkBets: horseracingCheckBets,
     }
 }
 
