@@ -11,6 +11,7 @@ exports.up = function(knex, Promise) {
         table.json('data');
         table.json('result');
         table.bigInteger('result_create_time');
+        table.foreign('game_id').references('games.game_id');
     });
 };
 
