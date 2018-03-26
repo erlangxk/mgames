@@ -15,7 +15,9 @@ async function selectUserOrInsert(pool, operatorId, username) {
     });
 }
 
-module.exports = selectUserOrInsert;
+module.exports = {
+    selectUserOrInsert
+};
 
 if (require.main === module) {
     const {checkedDbPool} = require('../common')

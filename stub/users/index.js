@@ -8,11 +8,12 @@ const Router = require('koa-router');
 const router = new Router({ prefix: "/api" });
 
 router.all('/auth/:token', async (ctx, next) => {
-    ctx.body = {
-        username: "jobs",
-        test: true,
-        currency: "USD",
-    }
+    // ctx.body = {
+    //     username: "jobs",
+    //     test: true,
+    //     currency: "USD",
+    // }
+    ctx.throw(500);
 });
 
 app.use(router.routes());
