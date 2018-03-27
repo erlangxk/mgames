@@ -1,7 +1,9 @@
 const lodash = require('lodash');
-const { Result, jwtSignAsync } = require('./common');
-const { selectUserOrInsert } = require('./db');
 const request = require('superagent');
+const db = require('../db');
+
+const { Result, jwtSignAsync } = require('./common');
+const catchHttpError = require('./request');
 
 function parseAuthResponse(res) {
     return res;
@@ -13,9 +15,9 @@ async function authToken(ctx, next) {
     let token = ctx.params.token;
     if (lodash.isString(token) && token.length > 0) {
         try {
-            const res = await request.post(`${authUrl}/${token}`).retry().timeout(3000);
+            const res = await catchHttpError(request.post(`${authUrl}/${token}`).retry().timeout(3000));
             const user = parseAuthResponse(res.body);
-            const userId = await selectUserOrInsert(ctx.dbpool, operatorId, user.name);
+            const userId = await db.selectUserOrInsert(ctx.dbpool, operatorId, user.name);
             const jwtToken = await jwtSignAsync({ id: userId, ...user }, secret, { expiresIn: '24h' });
             ctx.body = Result.ok(jwtToken);
         } catch (err) {
@@ -26,3 +28,5 @@ async function authToken(ctx, next) {
         ctx.throw(400);
     }
 }
+
+module.exports = authToken;

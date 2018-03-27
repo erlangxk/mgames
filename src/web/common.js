@@ -6,7 +6,7 @@ const Result = {
 const util = require('util');
 const jwt = require('jsonwebtoken');
 const jwtSignAsync = util.promisify(jwt.sign);
-const jwtVerifyAsync = utils.promisify(jwt.verify);
+const jwtVerifyAsync = util.promisify(jwt.verify);
 
 module.exports = {
     Result,

@@ -1,7 +1,7 @@
-const { insertBets, loadDraw, insertWalletBet, updateWalletBet, updateBetStatus } = require('./db');
+const db = require('../db');
 const bodyParser = require('co-body');
 const lodash = require('lodash');
-const { validateBets } = require('./games');
+const games = require('./games');
 
 async function userBet(ctx, next) {
     try {
@@ -9,8 +9,8 @@ async function userBet(ctx, next) {
         const json = await bodyParser.json(ctx);
         const userId = await validateToken(ctx.configs.jwtSecret, ctx.params.token);
         const draw = await validateDraw(ctx.params.draw, betTime, ctx.dbpool);
-        const bets = await validateBets(draw.game, json);
-        const betId = await insertBets(ctx.dbpool, userId, draw.drawId, bets.amount, bets.json, betTime);
+        const bets = await games.validateBets(draw.game, json);
+        const betId = await db.insertBets(ctx.dbpool, userId, draw.drawId, bets.amount, bets.json, betTime);
         //insert wallet request into database.
         //send request to deduct money
         //update wallet request

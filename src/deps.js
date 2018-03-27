@@ -8,53 +8,41 @@ const lodash = require('lodash');
 //check jwt secret
 //check operatorId
 
-async function installDeps(context) {
-    const postgresConnStr = process.env.POSTGRES_CONNECTION_STRING;
-    const redisConnStr = process.env.POSTGRES_CONNECTION_STRING;
-    if (lodash.isEmpty(postgresConnStr)) {
-        throw new Error('postgres is not configured');
+async function mountDeps(context) {
+    const pgConnStr = process.env.POSTGRES_CONN;
+    if (lodash.isEmpty(pgConnStr)) {
+        throw new Error('POSTGRES_CONN is not configured');
     }
-    if (lodash.isEmpty(redisConnStr)) {
-        throw new Error('redis is not configured');
-    }
-
     let dbpool = undefined;
     try {
-        dbpool = await checkedDbPool(postgresConnStr);
+        dbpool = await checkedDbPool(pgConnStr);
     } catch (err) {
-        console.log(`postgresql connect error:${postgresConnStr}`);
-        throw err;
-    }
-
-    let redis = undefined;
-    try {
-        redis = await checkRedis(redisConnStr);
-    } catch (err) {
-        console.log(`redis connect error:${redisConnStr}`);
+        console.log(`postgresql connect error:${pgConnStr}`);
         throw err;
     }
 
     const authUrl = process.env.AUTH_URL;
-    const walletUrl = process.env.WALLET_URL;
-    const jwtSecret = process.env.JWT_SECRET;
-    const operatorId = process.env.OPERATOR_ID;
-
     if (lodash.isEmpty(authUrl)) {
-        throw new Error('authUrl is not configured');
+        throw new Error('AUTH_URL is not configured');
     }
+
+    const walletUrl = process.env.WALLET_URL;
     if (lodash.isEmpty(walletUrl)) {
-        throw new Error('walletUrl is not configured');
+        throw new Error('WALLET_URL is not configured');
     }
+
+    const jwtSecret = process.env.JWT_SECRET;
     if (lodash.isEmpty(jwtSecret)) {
-        throw new Error('jwtSecret is not configured');
+        throw new Error('JWT_SECRET is not configured');
     }
+
+    const operatorId = process.env.OPERATOR_ID;
     if (lodash.isEmpty(operatorId)) {
-        throw new Error('operatorId is not configured');
+        throw new Error('OPERATOR_ID is not configured');
     }
 
     context.configs = {
         dbpool,
-        reids,
         authUrl,
         walletUrl,
         jwtSecret,
@@ -63,6 +51,7 @@ async function installDeps(context) {
 
     return function () {
         if (dbpool) dbpool.end();
-        //if(redis)redis.colse();
     }
 }
+
+module.exports = mountDeps;

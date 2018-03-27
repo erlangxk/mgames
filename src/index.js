@@ -1,9 +1,10 @@
 const http = require('http');
 const Koa = require('koa');
 const api = require('./api');
+const mountDeps = require('./deps');
 const PORT = 3000;
 
-function installRoutes(app) {
+function mountRoutes(app) {
     app.use(async (ctx, next) => {
         const start = Date.now();
         ctx.state.requestTime = start;
@@ -20,8 +21,8 @@ function installRoutes(app) {
 }
 
 async function bootstrap(app) {
-    const dispose = await installDeps(app.context);
-    installRoutes(app);
+    const dispose = await mountDeps(app.context);
+    mountRoutes(app);
     const server = http.createServer(app.callback());
     server.on('close', () => {
         console.log("http server is closing.");
