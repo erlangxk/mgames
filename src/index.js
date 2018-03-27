@@ -4,6 +4,8 @@ const api = require('./api');
 const mountDeps = require('./deps');
 const PORT = 3000;
 
+require('dotenv').config();
+
 function mountRoutes(app) {
     app.use(async (ctx, next) => {
         const start = Date.now();
