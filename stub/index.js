@@ -19,10 +19,6 @@ router.all('/wallet/debit', async (ctx, next) => {
 
 app.use(router.routes());
 
-app.use(async (ctx, next) => {
-    ctx.body = 'PONG';
-});
-
 if (require.main === module) {
     const PORT = 8000;
     app.listen(PORT, () => {

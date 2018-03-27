@@ -1,9 +1,12 @@
 async function authToken(token) {
-    return {
-        username: "jobs",
-        test: true,
-        currency: "USD",
-    };
+    const p = new Promise((resolve, reject) => {
+        setTimeout(() => resolve({
+            username: "jobs",
+            test: true,
+            currency: "USD",
+        }), 1000);
+    });
+    return p;
 }
 
 module.exports = authToken;
