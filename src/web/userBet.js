@@ -14,12 +14,12 @@ async function userBet(ctx, next) {
         const bets = await games.validateBets(draw.game, json);
         //above all, should be 400
         const betTime = ctx.state.requestTime;
-        const betId = await db.insertBets(dbpool, userId, draw.drawId, bets.amount, bets.json, betTime);
+        const betId = await db.insertBets(dbpool, userId, draw.drawId, bets.total, bets.amount, bets.json, betTime);
         //insert wallet request into database.
         //send request to deduct money
         //update wallet request
 
-        ctx.body = Request.ok(`calling /api/bet ${draw}, ${ctx.params.token}, ${JSON.stringify(json)}, ${betId}`);
+        ctx.body = Result.ok(`calling /api/bet ${draw}, ${ctx.params.token}, ${JSON.stringify(json)}, ${betId}`);
     } catch (err) {
         ctx.state.log.info(err);
         return ctx.throw(400);
@@ -29,12 +29,10 @@ async function userBet(ctx, next) {
 async function validateToken(ctx) {
     const jwtSecret = ctx.configs.jwtSecret;
     const token = ctx.query.token;
-     //const token = parseJwtToken(ctx.header);
-    const log = ctx.state.log;
+    //const token = parseJwtToken(ctx.header);
     const result = await jwtVerifyAsync(token, jwtSecret);
     const userId = result.id;
-    const log2 = log.child({ userId });
-    ctx.state.log = log2;
+    ctx.state.log = ctx.state.log.child({ userId });
     return userId;
 }
 
@@ -42,7 +40,7 @@ async function validateDraw(ctx) {
     const drawId = ctx.params.draw;
     const dbpool = ctx.configs.dbpool;
     const betTime = ctx.state.requestTime;
-    const result = await db.loadDraw(dbpool, drawId, betTime)
+    const result = await db.loadDraw(dbpool, drawId, betTime);
     if (result !== undefined) {
         return ({ drawId, game: result });
     }

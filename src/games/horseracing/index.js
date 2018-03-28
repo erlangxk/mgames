@@ -107,14 +107,16 @@ function randomResult() {
 
 function checkBets(bets) {
     let total = 0;
+    let amount = 0;
     for (const [k, v] of Object.entries(bets)) {
         if (ALLOWED_BET_TYPES.has(k) && lodash.isInteger(v) && v > 0 && v <= MAX_BET) {
-            total += v;
+            amount += v;
+            total += 1;
             continue;
         }
         return undefined;
     }
-    return total;
+    return { total, amount };
 }
 
 module.exports = {
@@ -161,5 +163,6 @@ function testRandomResult() {
 }
 
 if (require.main === module) {
-    testRandomResult();
+    const p = randomPaytable();
+    console.log(p);
 }
