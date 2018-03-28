@@ -20,15 +20,14 @@ async function mountDeps(context) {
         console.log(`postgresql connect error:${pgConnStr}`);
         throw err;
     }
-
-    const authUrl = process.env.AUTH_URL;
-    if (lodash.isEmpty(authUrl)) {
-        throw new Error('AUTH_URL is not configured');
+    const authTokenUrl = process.env.AUTH_TOKEN_URL;
+    if (lodash.isEmpty(authTokenUrl)) {
+        throw new Error('AUTH_TOKEN_URL is not configured');
     }
 
-    const walletUrl = process.env.WALLET_URL;
-    if (lodash.isEmpty(walletUrl)) {
-        throw new Error('WALLET_URL is not configured');
+    const walletBetUrl = process.env.WALLET_BET_URL;
+    if (lodash.isEmpty(walletBetUrl)) {
+        throw new Error('WALLET_BET_URL is not configured');
     }
 
     const jwtSecret = process.env.JWT_SECRET;
@@ -43,8 +42,8 @@ async function mountDeps(context) {
 
     context.configs = {
         dbpool,
-        authUrl,
-        walletUrl,
+        authTokenUrl,
+        walletBetUrl,
         jwtSecret,
         operatorId
     }
