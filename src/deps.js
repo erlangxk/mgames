@@ -13,13 +13,7 @@ async function mountDeps(context) {
     if (lodash.isEmpty(pgConnStr)) {
         throw new Error('POSTGRES_CONN is not configured');
     }
-    let dbpool = undefined;
-    try {
-        dbpool = await checkedDbPool(pgConnStr);
-    } catch (err) {
-        console.log(`postgresql connect error:${pgConnStr}`);
-        throw err;
-    }
+
     const authTokenUrl = process.env.AUTH_TOKEN_URL;
     if (lodash.isEmpty(authTokenUrl)) {
         throw new Error('AUTH_TOKEN_URL is not configured');
@@ -40,16 +34,20 @@ async function mountDeps(context) {
         throw new Error('OPERATOR_ID is not configured');
     }
 
-    context.configs = {
-        dbpool,
-        authTokenUrl,
-        walletBetUrl,
-        jwtSecret,
-        operatorId
-    }
-
-    return function () {
-        if (dbpool) dbpool.end();
+    try {
+        const dbpool = await checkedDbPool(pgConnStr);
+        context.configs = {
+            dbpool,
+            authTokenUrl,
+            walletBetUrl,
+            jwtSecret,
+            operatorId
+        };
+        return function () {
+            if (dbpool) dbpool.end();
+        };
+    } catch (err) {
+        throw err;
     }
 }
 

@@ -4,7 +4,7 @@ async function authToken(token) {
             username: "jobs",
             test: true,
             currency: "USD",
-        }), 1000);
+        }), 0);
     });
     return p;
 }

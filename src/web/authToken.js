@@ -11,17 +11,18 @@ function parseAuthResponse(res) {
 
 async function authToken(ctx, next) {
     //SHOULD get and verify when server start
-    let { authUrl, jwtSecret, operatorId } = ctx.configs;
+    let log = ctx.state.log;
+    let { dbpool, authTokenUrl, jwtSecret, operatorId } = ctx.configs;
     let token = ctx.params.token;
     if (lodash.isString(token) && token.length > 0) {
         try {
-            const res = await catchHttpError(request.post(`${authUrl}/${token}`).retry().timeout(3000));
+            const res = await catchHttpError(log, request.post(`${authTokenUrl}/${token}`).retry().timeout(3000));
             const user = parseAuthResponse(res.body);
-            const userId = await db.selectUserOrInsert(ctx.dbpool, operatorId, user.name);
-            const jwtToken = await jwtSignAsync({ id: userId, ...user }, secret, { expiresIn: '24h' });
+            const userId = await db.selectUserOrInsert(dbpool, operatorId, user.username);
+            const jwtToken = await jwtSignAsync({ id: userId, ...user }, jwtSecret, { expiresIn: '24h' });
             ctx.body = Result.ok(jwtToken);
         } catch (err) {
-            console.error("authToken failed", err);
+            log.error({ err, req: ctx.req }, "authToken failed");
             ctx.throw(504);
         }
     } else {

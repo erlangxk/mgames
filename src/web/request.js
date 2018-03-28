@@ -1,7 +1,11 @@
 const { MyError, ErrorCode } = require('../errors');
 
-function catchHttpError(request) {
-    return request.catch(err => {
+function catchHttpError(log, request) {
+    log.info(`request:${JSON.stringify(request)}`);
+    return request.then(result => {
+        log.info(`response:${JSON.stringify(result)}`);
+        return result;
+    }).catch(err => {
         const url = request.url;
         if (err.status) {
             const msg = `${url}-${err.status} ${err.message}`;

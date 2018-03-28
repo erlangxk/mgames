@@ -1,15 +1,24 @@
 const http = require('http');
 const Koa = require('koa');
 const api = require('./api');
+const uuid = require('uuid');
+const bunyan = require('bunyan');
+const log = bunyan.createLogger({
+    name: 'mgames',
+    src: true,
+    serializers: bunyan.stdSerializers
+});
 const mountDeps = require('./deps');
-const PORT = 3000;
 
 require('dotenv').config();
 
 function mountRoutes(app) {
     app.use(async (ctx, next) => {
         const start = Date.now();
+        const reqId = uuid();
         ctx.state.requestTime = start;
+        ctx.state.requestId = reqId;
+        ctx.state.log = log.child({ reqId });
         await next();
         const delta = Math.ceil(Date.now() - start);
         ctx.set('X-Response-Time', `${delta} ms`);
@@ -20,6 +29,10 @@ function mountRoutes(app) {
     app.use(async (ctx, next) => {
         ctx.body = 'PONG';
     });
+
+    app.on('error', err => {
+        log.error(err);
+    });
 }
 
 async function bootstrap(app) {
@@ -27,10 +40,10 @@ async function bootstrap(app) {
     mountRoutes(app);
     const server = http.createServer(app.callback());
     server.on('close', () => {
-        console.log("http server is closing.");
+        log.info("http server is closing.");
         dispose();
     });
-    return server.listen(PORT);
+    return server.listen(3000);
 }
 
 const app = new Koa();
@@ -38,8 +51,8 @@ module.exports = app;
 
 if (require.main === module) {
     bootstrap(app).then(server => {
-        console.log(`server is listening at ${JSON.stringify(server.address())}`);
+        log.info(`server is listening at port:${server.address().port}`);
     }).catch(err => {
-        console.error(err);
+        log.info(err, 'server failed to start');
     })
 }
