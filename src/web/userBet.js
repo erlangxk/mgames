@@ -2,36 +2,51 @@ const db = require('../db');
 const bodyParser = require('co-body');
 const lodash = require('lodash');
 const games = require('./games');
-
+const { parseJwtToken } = require('./request');
+const { MyError, ErrorCode } = require('../errors');
+const { Result, jwtVerifyAsync } = require('./common');
 async function userBet(ctx, next) {
+    const dbpool = ctx.configs.dbpool;
     try {
-        const betTime = ctx.state.requestTime;
+        const userId = await validateToken(ctx);
+        const draw = await validateDraw(ctx);
         const json = await bodyParser.json(ctx);
-        const userId = await validateToken(ctx.configs.jwtSecret, ctx.params.token);
-        const draw = await validateDraw(ctx.params.draw, betTime, ctx.dbpool);
         const bets = await games.validateBets(draw.game, json);
-        const betId = await db.insertBets(ctx.dbpool, userId, draw.drawId, bets.amount, bets.json, betTime);
+        //above all, should be 400
+        const betTime = ctx.state.requestTime;
+        const betId = await db.insertBets(dbpool, userId, draw.drawId, bets.amount, bets.json, betTime);
         //insert wallet request into database.
         //send request to deduct money
         //update wallet request
 
-        ctx.body = `calling /api/bet ${draw}, ${ctx.params.token}, ${JSON.stringify(json)}, ${betId}`;
+        ctx.body = Request.ok(`calling /api/bet ${draw}, ${ctx.params.token}, ${JSON.stringify(json)}, ${betId}`);
     } catch (err) {
+        ctx.state.log.info(err);
         return ctx.throw(400);
     }
 }
 
-async function validateToken(jwtSecret, token) {
-    return jwtVerifyAsync(token, jwtSecret);
+async function validateToken(ctx) {
+    const jwtSecret = ctx.configs.jwtSecret;
+    const token = ctx.query.token;
+     //const token = parseJwtToken(ctx.header);
+    const log = ctx.state.log;
+    const result = await jwtVerifyAsync(token, jwtSecret);
+    const userId = result.id;
+    const log2 = log.child({ userId });
+    ctx.state.log = log2;
+    return userId;
 }
 
-async function validateDraw(drawId, betTime, dbpool) {
-    loadDraw(dbpool, drawId, betTime).then(result => {
-        if (result != undefined) {
-            return Promise.resolve({ drawId, game: result });
-        }
-        return Promise.reject(new Error("draw is not found, or bet timing is not right"));
-    });
+async function validateDraw(ctx) {
+    const drawId = ctx.params.draw;
+    const dbpool = ctx.configs.dbpool;
+    const betTime = ctx.state.requestTime;
+    const result = await db.loadDraw(dbpool, drawId, betTime)
+    if (result !== undefined) {
+        return ({ drawId, game: result });
+    }
+    throw new MyError(ErrorCode.ERR_REQUEST_INVALID_DRAW, "draw is not found or bet timing is not right");
 }
 
 function parseWalletBetResponse(res) {

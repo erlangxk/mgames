@@ -1,5 +1,21 @@
 const { MyError, ErrorCode } = require('../errors');
 
+function parseJwtToken(header) {
+    if (header) {
+        const authHeader = header.authorization;
+        if (authHeader) {
+            const parts = authHeader.split(' ');
+            if (parts.length === 2) {
+                const [scheme, credentials] = parts;
+                if (/^Bearer$/i.test(scheme)) {
+                    return credentials;
+                }
+            }
+        }
+    }
+    throw new MyError(ErrorCode.ERR_REQUEST_INVALID_TOKEN, 'Bad Authorization header');
+};
+
 function catchHttpError(log, request) {
     log.info(`request:${JSON.stringify(request)}`);
     return request.then(result => {
@@ -20,4 +36,7 @@ function catchHttpError(log, request) {
     });
 }
 
-module.exports = catchHttpError;
+module.exports = {
+    catchHttpError,
+    parseJwtToken,
+};

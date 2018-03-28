@@ -3,7 +3,7 @@ const request = require('superagent');
 const db = require('../db');
 
 const { Result, jwtSignAsync } = require('./common');
-const catchHttpError = require('./request');
+const { catchHttpError } = require('./request');
 
 function parseAuthResponse(res) {
     return res;

@@ -4,15 +4,19 @@ class MyError extends Error {
         this.name = this.constructor.name;
         this.code = code;
     }
-    toString(){
+    toString() {
         return `code:${this.code},${this.message}`;
     }
 }
 
 const ErrorCode = {
+    ERR_REQUEST_INVALID_TOKEN: 1000,
+    ERR_REQUEST_INVALID_DRAW: 1001,
 
-    ERR_BET_RESPONSE: 2000,
-    ERR_PAYOUT_RESPONSE: 3000,
+
+    ERR_WALLET_BET_RESPONSE: 2000,
+    ERR_WALLET_PAYOUT_RESPONSE: 3000,
+    ERR_AUTH_TOKEN_RESPONSE: 4000,
 
     ERR_HTTP: 5000,
     ERR_HTTP_TIMEOUT: 5001,

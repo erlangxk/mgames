@@ -15,10 +15,8 @@ require('dotenv').config();
 function mountRoutes(app) {
     app.use(async (ctx, next) => {
         const start = Date.now();
-        const reqId = uuid();
         ctx.state.requestTime = start;
-        ctx.state.requestId = reqId;
-        ctx.state.log = log.child({ reqId });
+        ctx.state.log = log.child({ reqId: uuid() });
         await next();
         const delta = Math.ceil(Date.now() - start);
         ctx.set('X-Response-Time', `${delta} ms`);
