@@ -1,10 +1,13 @@
 const db = require('../db');
 const bodyParser = require('co-body');
 const lodash = require('lodash');
+const request = require('superagent');
 const games = require('./games');
-const { parseJwtToken } = require('./request');
+
+const { parseAuthorizationBearer, catchHttpError } = require('./request');
 const { MyError, ErrorCode } = require('../errors');
 const { Result, jwtVerifyAsync } = require('./common');
+
 async function userBet(ctx, next) {
     const dbpool = ctx.configs.dbpool;
     try {
@@ -28,8 +31,7 @@ async function userBet(ctx, next) {
 
 async function validateToken(ctx) {
     const jwtSecret = ctx.configs.jwtSecret;
-    const token = ctx.query.token;
-    //const token = parseJwtToken(ctx.header);
+    const token = parseAuthorizationBearer(ctx.header);
     const result = await jwtVerifyAsync(token, jwtSecret);
     const userId = result.id;
     ctx.state.log = ctx.state.log.child({ userId });
@@ -55,30 +57,53 @@ function parseWalletBetResponse(res) {
     }
 }
 
-async function sendRequestToWallet(dbpool, walletUrl, drawId, betId, amount) {
+async function walletBetRemote(walletUrl) {
+    return (gameTrxId, amount) => {
+        return catchHttpError(request.post(walletUrl).query({ trxId: gameTrxId, amount }).retry().timeout(3000));
+    };
+}
+
+async function sendRequestToWallet(dbpool, betId, amount, walletBetRemote) {
+    let gameTrxId = undefined;
     try {
-        const gameTrxId = await insertWalletBet(dbpool, betId, amount);
-        await updateBetStatus(dbpool, betId, BetStatus.PAY_REQ_SENT, BetStatus.CREATED);
-        const res = request.post(walletUrl).query({ trxId: gameTrxId, amount, drawId, betId }).retry().timeout(3000);
+        gameTrxId = await db.insertWalletBet(dbpool, betId, amount);
+        await db.updateBetStatusToPayReqSent(dbpool, betId);
+        const res = await walletBetRemote(gameTrxId, amount);
         const result = parseWalletBetResponse(res);
-        await updateWalletBet(dbpool, result.walletTrxId, result.walletCode, 0, result.trxId);
+        await db.updateWalletBet(dbpool, result.walletTrxId, result.walletCode, 0, gameTrxId);
         if (result.ok) {
-            await updateBetStatus(betId, BetStatus.PAY_RES_GOT, BetStatus.PAY_REQ_SENT);
+            await db.updateBetStatusToPayResGot(dbpool, betId);
         }
         return (!!result.ok);
     } catch (err) {
         console.error("failed to send request to wallet", err);
-        let error;
-        if (err.timeout) {
-            error = 1;
-        } else if (err instanceof BetResponseParseError) {
-            error = 2;
-        } else {
-            error = 3;
+        if (gameTrxId) {
+            await db.updateWalletBet(dbpool, undefined, undefined, err.code, gameTrxId);
         }
-        await updateWalletBet(dbpool, undefined, undefined, error, gameTrxId);
-        throw new WalletBetRequestError("failed to send request to wallet");
+        throw err;
     }
 }
 
 module.exports = userBet;
+
+if (require.main === module) {
+    const fakeRemote = function () {
+        return ({
+            walletTrxId: 1,
+            walletCode: 0,
+            ok: true
+        });
+    }
+
+    const { checkedDbPool } = require('../db')
+    const CONNECTION_STRING = 'postgres://postgres:111111@localhost/mgames';
+    async function test() {
+        const pool = await checkedDbPool(CONNECTION_STRING);
+        const result = await sendRequestToWallet(pool, 4, 9, fakeRemote);
+        console.log(`result:${result}`);
+        pool.end(() => { console.log("close db pool") });
+    }
+    test();
+
+
+}

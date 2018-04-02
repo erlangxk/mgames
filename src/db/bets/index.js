@@ -28,9 +28,18 @@ async function updateBetStatus(client, betId, newStatus, oldStatus) {
     });
 }
 
+function updateBetStatusToPayReqSent(client, betId) {
+    return updateBetStatus(client, betId, BetStatus.PAY_REQ_SENT, BetStatus.CREATED);
+}
+
+function updateBetStatusToPayResGot(client, betId) {
+    return updateBetStatus(client, betId, BetStatus.PAY_RES_GOT, BetStatus.PAY_REQ_SENT);
+}
+
 module.exports = {
     insertBets,
-    updateBetStatus
+    updateBetStatusToPayReqSent,
+    updateBetStatusToPayResGot,
 };
 
 if (require.main === module) {

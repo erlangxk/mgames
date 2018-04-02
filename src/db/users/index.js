@@ -1,4 +1,4 @@
-const { transaction, catchDatabaseError } = require('../common')
+const { transaction, catchDatabaseError } = require('../common');
 
 const SQL_LOAD_USER = 'SELECT user_id FROM users WHERE operator_id=$1 AND username=$2';
 const SQL_INSERT_USER = 'INSERT INTO users (operator_id,username,create_time) VALUES ($1,$2,$3) RETURNING user_id';
