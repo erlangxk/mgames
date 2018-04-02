@@ -1,6 +1,13 @@
+
+const lodash = require('lodash');
+
 class MyError extends Error {
-    constructor(code, message) {
-        super(message);
+    constructor(code, cause) {
+        if (lodash.isError(cause)) {
+            super(cause.message);
+        } else {
+            super(lodash.toString(cause));
+        }
         this.name = this.constructor.name;
         this.code = code;
     }
@@ -21,6 +28,8 @@ const ErrorCode = {
     ERR_HTTP: 5000,
     ERR_HTTP_TIMEOUT: 5001,
     ERR_HTTP_NOT200: 5002,
+
+    ERR_DB: 6000,
 };
 
 module.exports = {

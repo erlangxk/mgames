@@ -24,7 +24,18 @@ async function transaction(pool, func) {
     }
 }
 
+const { MyError, ErrorCode } = require('../errors');
+
+async function catchDatabaseError(func) {
+    try {
+        return await func();
+    } catch (err) {
+        throw new MyError(ErrorCode.ERR_DB, err);
+    }
+}
+
 module.exports = {
     transaction,
     checkedDbPool,
+    catchDatabaseError,
 }
