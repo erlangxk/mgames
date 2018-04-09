@@ -1,3 +1,5 @@
+"use strict";
+
 const Result = {
     ok: result => ({ result }),
     err: error => ({ error })

@@ -27,7 +27,11 @@ const ErrorCode = {
 
     ERR_HTTP: 5000,
     ERR_HTTP_TIMEOUT: 5001,
-    ERR_HTTP_NOT200: 5002,
+    ERR_HTTP_INVALID_JSON: 5002,
+    ERR_HTTP_NOT200: 5003,
+
+
+
 
     ERR_DB: 6000,
 };

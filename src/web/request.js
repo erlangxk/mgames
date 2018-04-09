@@ -1,4 +1,26 @@
 const { MyError, ErrorCode } = require('../errors');
+const got = require('got');
+
+const DEFAULT_OPTS = {
+    timeout: 3000,
+    retries: 3,
+    headers: {
+        'user-agent': 'unkown',
+    },
+    json: true,
+};
+
+function get(url) {
+    return got.get(url, DEFAULT_OPTS);
+}
+
+function post(url, data) {
+    const opts = Object.assign({
+        body: data,
+        form: true
+    }, DEFAULT_OPTS);
+    return got.post(url, opts);
+}
 
 function parseAuthorizationBearer(header) {
     if (header) {
@@ -23,9 +45,11 @@ function catchHttpError(log, request) {
         return result;
     }).catch(err => {
         log.error(`request to ${request.url} failed`);
-        if (err.status) {
+        if (err.name === 'HTTPError') {
             throw new MyError(ErrorCode.ERR_HTTP_NOT200, err);
-        } else if (err.timeout) {
+        } else if (err.name === 'ParseError') {
+            throw new MyError(ErrorCode.ERR_HTTP_INVALID_JSON, err);
+        } else if (err.name === 'RequestError' && err.code === 'ETIMEDOUT') {
             throw new MyError(ErrorCode.ERR_HTTP_TIMEOUT, err);
         } else {
             throw new MyError(ErrorCode.ERR_HTTP, err);
@@ -36,4 +60,6 @@ function catchHttpError(log, request) {
 module.exports = {
     catchHttpError,
     parseAuthorizationBearer,
+    get,
+    post,
 };

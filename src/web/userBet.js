@@ -1,10 +1,9 @@
 const db = require('../db');
 const bodyParser = require('co-body');
 const lodash = require('lodash');
-const request = require('superagent');
 const games = require('./games');
 
-const { parseAuthorizationBearer, catchHttpError } = require('./request');
+const { parseAuthorizationBearer, catchHttpError, post } = require('./request');
 const { MyError, ErrorCode } = require('../errors');
 const { Result, jwtVerifyAsync } = require('./common');
 
@@ -57,18 +56,18 @@ function parseWalletBetResponse(res) {
     }
 }
 
-async function walletBetRemote(walletUrl) {
-    return (gameTrxId, amount) => {
-        return catchHttpError(request.post(walletUrl).query({ trxId: gameTrxId, amount }).retry().timeout(3000));
+async function walletBetRemote(log, walletUrl) {
+    return async (gameTrxId, userId, amount) => {
+        return catchHttpError(log, post(walletUrl, { trxId: gameTrxId, userId, amount }));
     };
 }
 
-async function sendRequestToWallet(dbpool, betId, amount, walletBetRemote) {
+async function sendRequestToWallet(dbpool, userId, betId, amount, walletBetRemote) {
     let gameTrxId = undefined;
     try {
         gameTrxId = await db.insertWalletBet(dbpool, betId, amount);
         await db.updateBetStatusToPayReqSent(dbpool, betId);
-        const res = await walletBetRemote(gameTrxId, amount);
+        const res = await walletBetRemote(gameTrxId, userId, amount);
         const result = parseWalletBetResponse(res);
         await db.updateWalletBet(dbpool, result.walletTrxId, result.walletCode, 0, gameTrxId);
         if (result.ok) {
@@ -99,11 +98,9 @@ if (require.main === module) {
     const CONNECTION_STRING = 'postgres://postgres:111111@localhost/mgames';
     async function test() {
         const pool = await checkedDbPool(CONNECTION_STRING);
-        const result = await sendRequestToWallet(pool, 4, 9, fakeRemote);
+        const result = await sendRequestToWallet(pool, "simon", 4, 9, fakeRemote);
         console.log(`result:${result}`);
         pool.end(() => { console.log("close db pool") });
     }
     test();
-
-
 }
