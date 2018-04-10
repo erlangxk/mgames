@@ -20,8 +20,9 @@ async function userBet(ctx, next) {
         //insert wallet request into database.
         //send request to deduct money
         //update wallet request
-
-        ctx.body = Result.ok(`calling /api/bet ${draw}, ${ctx.params.token}, ${JSON.stringify(json)}, ${betId}`);
+        const wallet = walletBetRemote(ctx.state.log, ctx.configs.walletBetUrl);
+        const result = await sendRequestToWallet(dbpool, userId, betId, bets.amount, wallet);
+        ctx.body = Result.ok(`calling /api/bet ${draw}, result:${result}`);
     } catch (err) {
         ctx.state.log.info(err);
         return ctx.throw(400);
@@ -56,8 +57,8 @@ function parseWalletBetResponse(res) {
     }
 }
 
-async function walletBetRemote(log, walletUrl) {
-    return async (gameTrxId, userId, amount) => {
+function walletBetRemote(log, walletUrl) {
+    return (gameTrxId, userId, amount) => {
         return catchHttpError(log, post(walletUrl, { trxId: gameTrxId, userId, amount }));
     };
 }
@@ -86,21 +87,21 @@ async function sendRequestToWallet(dbpool, userId, betId, amount, walletBetRemot
 module.exports = userBet;
 
 if (require.main === module) {
-    const fakeRemote = function () {
-        return ({
-            walletTrxId: 1,
-            walletCode: 0,
-            ok: true
-        });
-    }
+    const bunyan = require('bunyan');
+    const log = bunyan.createLogger({
+        name: 'mgames',
+        src: true,
+        serializers: bunyan.stdSerializers
+    });
 
     const { checkedDbPool } = require('../db')
     const CONNECTION_STRING = 'postgres://postgres:111111@localhost/mgames';
+    const walletUrl = 'http://localhost:8000/api/wallet/debit';
     async function test() {
         const pool = await checkedDbPool(CONNECTION_STRING);
-        const result = await sendRequestToWallet(pool, "simon", 4, 9, fakeRemote);
+        const result = await sendRequestToWallet(pool, "simon", 4, 9, walletBetRemote(log, walletUrl));
         console.log(`result:${result}`);
         pool.end(() => { console.log("close db pool") });
     }
-    test();
+    test().catch(err=>console.error(err));
 }

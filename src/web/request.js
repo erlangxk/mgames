@@ -11,7 +11,12 @@ const DEFAULT_OPTS = {
 };
 
 function get(url) {
-    return got.get(url, DEFAULT_OPTS);
+    const opts = DEFAULT_OPTS;
+    return {
+        run: () => got.get(url, opts),
+        url,
+        opts,
+    }
 }
 
 function post(url, data) {
@@ -19,7 +24,11 @@ function post(url, data) {
         body: data,
         form: true
     }, DEFAULT_OPTS);
-    return got.post(url, opts);
+    return {
+        run: () => got.post(url, opts),
+        url,
+        opts,
+    }
 }
 
 function parseAuthorizationBearer(header) {
@@ -39,9 +48,9 @@ function parseAuthorizationBearer(header) {
 };
 
 function catchHttpError(log, request) {
-    log.info(`request:${JSON.stringify(request)}`);
-    return request.then(result => {
-        log.info(`response:${JSON.stringify(result)}`);
+    log.info(`request sent, url: ${request.url}, opts:${JSON.stringify(request.opts)}`);
+    return request.run().then(result => {
+        log.info(`response got, url: ${request.url}, body:${JSON.stringify(result.body)}`);
         return result;
     }).catch(err => {
         log.error(`request to ${request.url} failed`);
